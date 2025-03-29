@@ -182,8 +182,29 @@ function updateAllData() {
 }
 
 function updateDashboard() {
-    const totalIncome = calculateTotal('income');
-    const totalExpense = calculateTotal('expense');
+    const selectedDate = state.selectedMonths.dashboard;
+    let filteredTransactions = state.transactions;
+
+    // Only filter by month if not showing all months
+    if (selectedDate !== 'all') {
+        const selectedYear = selectedDate.getFullYear();
+        const selectedMonth = selectedDate.getMonth();
+
+        filteredTransactions = state.transactions.filter(t => {
+            const transactionDate = new Date(t.date);
+            return transactionDate.getFullYear() === selectedYear && 
+                   transactionDate.getMonth() === selectedMonth;
+        });
+    }
+
+    const totalIncome = filteredTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalExpense = filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
     const netSavings = totalIncome - totalExpense;
 
     document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
@@ -476,12 +497,27 @@ function getMonthlyData(selectedDate = null) {
     const income = [];
     const expenses = [];
 
-    // Get 6 months before and including the selected month
-    for (let i = 5; i >= 0; i--) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-        const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
-        months[monthKey] = { income: 0, expenses: 0 };
-        labels.push(date.toLocaleString('default', { month: 'short' }));
+    // If showing all months, get data for all available months
+    if (selectedDate === 'all') {
+        const allDates = state.transactions.map(t => new Date(t.date));
+        const minDate = new Date(Math.min(...allDates));
+        const maxDate = new Date(Math.max(...allDates));
+        let currentMonth = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+
+        while (currentMonth <= maxDate) {
+            const monthKey = currentMonth.getFullYear() + '-' + String(currentMonth.getMonth() + 1).padStart(2, '0');
+            months[monthKey] = { income: 0, expenses: 0 };
+            labels.push(currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' }));
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+        }
+    } else {
+        // Get 6 months before and including the selected month
+        for (let i = 5; i >= 0; i--) {
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+            const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+            months[monthKey] = { income: 0, expenses: 0 };
+            labels.push(date.toLocaleString('default', { month: 'short' }));
+        }
     }
 
     // Calculate totals for each month
@@ -511,16 +547,20 @@ function getCategoryData(type, selectedDate = null) {
     const categories = {};
     const currentDate = selectedDate || new Date();
     
-    state.transactions
-        .filter(t => {
+    let filteredTransactions = state.transactions.filter(t => t.type === type);
+
+    // Filter by month only if not showing all months
+    if (selectedDate !== 'all') {
+        filteredTransactions = filteredTransactions.filter(t => {
             const transactionDate = new Date(t.date);
-            return t.type === type && 
-                   transactionDate.getMonth() === currentDate.getMonth() &&
+            return transactionDate.getMonth() === currentDate.getMonth() &&
                    transactionDate.getFullYear() === currentDate.getFullYear();
-        })
-        .forEach(t => {
-            categories[t.category] = (categories[t.category] || 0) + t.amount;
         });
+    }
+
+    filteredTransactions.forEach(t => {
+        categories[t.category] = (categories[t.category] || 0) + t.amount;
+    });
 
     return {
         labels: Object.keys(categories),
@@ -712,6 +752,7 @@ function updatePageData(pageId) {
 function init() {
     loadFromLocalStorage();
     initializeMonthSelectors();
+    initializeFilters();
     updateAllData();
 }
 
@@ -736,11 +777,13 @@ function initializeMonthSelectors() {
     monthSelectors.forEach(selector => {
         if (!selector) return;
         
-        selector.innerHTML = uniqueMonths.map(monthKey => {
-            const [year, month] = monthKey.split('-');
-            const date = new Date(year, month - 1);
-            return `<option value="${monthKey}">${date.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
-        }).join('');
+        // Add "All Months" option first
+        selector.innerHTML = `<option value="all">All Months</option>` + 
+            uniqueMonths.map(monthKey => {
+                const [year, month] = monthKey.split('-');
+                const date = new Date(year, month - 1);
+                return `<option value="${monthKey}">${date.toLocaleString('default', { month: 'long', year: 'numeric' })}</option>`;
+            }).join('');
 
         // Set initial value to current month
         selector.value = currentMonthKey;
@@ -748,25 +791,143 @@ function initializeMonthSelectors() {
 
     // Add event listeners
     dashboardMonth.addEventListener('change', () => {
-        const [year, month] = dashboardMonth.value.split('-');
-        state.selectedMonths.dashboard = new Date(year, month - 1);
+        if (dashboardMonth.value === 'all') {
+            state.selectedMonths.dashboard = 'all';
+        } else {
+            const [year, month] = dashboardMonth.value.split('-');
+            state.selectedMonths.dashboard = new Date(year, month - 1);
+        }
         updateDashboard();
         updateIncomeExpenseChart();
     });
 
     incomeMonth.addEventListener('change', () => {
-        const [year, month] = incomeMonth.value.split('-');
-        state.selectedMonths.income = new Date(year, month - 1);
+        if (incomeMonth.value === 'all') {
+            state.selectedMonths.income = 'all';
+        } else {
+            const [year, month] = incomeMonth.value.split('-');
+            state.selectedMonths.income = new Date(year, month - 1);
+        }
         updateCategoryCharts();
         updateTrendCharts();
     });
 
     expenseMonth.addEventListener('change', () => {
-        const [year, month] = expenseMonth.value.split('-');
-        state.selectedMonths.expense = new Date(year, month - 1);
+        if (expenseMonth.value === 'all') {
+            state.selectedMonths.expense = 'all';
+        } else {
+            const [year, month] = expenseMonth.value.split('-');
+            state.selectedMonths.expense = new Date(year, month - 1);
+        }
         updateCategoryCharts();
         updateTrendCharts();
     });
+}
+
+// Filter functionality
+function initializeFilters() {
+    // Date range toggle handlers
+    ['income', 'expense'].forEach(type => {
+        const dateSelect = document.getElementById(`${type}FilterDate`);
+        const customRange = document.getElementById(`${type}CustomDateRange`);
+        const customEnd = document.getElementById(`${type}CustomDateEnd`);
+
+        dateSelect.addEventListener('change', () => {
+            const isCustom = dateSelect.value === 'custom';
+            customRange.style.display = isCustom ? 'block' : 'none';
+            customEnd.style.display = isCustom ? 'block' : 'none';
+        });
+
+        // Apply filter button
+        document.getElementById(`apply${type.charAt(0).toUpperCase() + type.slice(1)}Filter`)
+            .addEventListener('click', () => applyFilter(type));
+
+        // Reset filter button
+        document.getElementById(`reset${type.charAt(0).toUpperCase() + type.slice(1)}Filter`)
+            .addEventListener('click', () => resetFilter(type));
+    });
+}
+
+function applyFilter(type) {
+    const dateRange = document.getElementById(`${type}FilterDate`).value;
+    const category = document.getElementById(`${type}FilterCategory`).value;
+    const amountRange = document.getElementById(`${type}FilterAmount`).value;
+    let startDate = null;
+    let endDate = null;
+
+    // Calculate date range
+    if (dateRange === 'custom') {
+        startDate = new Date(document.getElementById(`${type}FilterStartDate`).value);
+        endDate = new Date(document.getElementById(`${type}FilterEndDate`).value);
+    } else {
+        const now = new Date();
+        endDate = new Date();
+        
+        switch(dateRange) {
+            case 'today':
+                startDate = new Date(now.setHours(0, 0, 0, 0));
+                break;
+            case 'week':
+                startDate = new Date(now.setDate(now.getDate() - 7));
+                break;
+            case 'month':
+                startDate = new Date(now.setMonth(now.getMonth() - 1));
+                break;
+            case 'year':
+                startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+                break;
+            default:
+                startDate = new Date(0); // Beginning of time
+        }
+    }
+
+    // Filter transactions
+    const filteredTransactions = state.transactions.filter(t => {
+        if (t.type !== type) return false;
+        
+        const transactionDate = new Date(t.date);
+        const amount = parseFloat(t.amount);
+
+        // Date filter
+        if (dateRange !== 'all' && (transactionDate < startDate || transactionDate > endDate)) {
+            return false;
+        }
+
+        // Category filter
+        if (category !== 'all' && t.category !== category) {
+            return false;
+        }
+
+        // Amount filter
+        if (amountRange !== 'all') {
+            const [min, max] = amountRange.split('-').map(v => v.replace('+', ''));
+            if (max) {
+                if (amount < parseFloat(min) || amount > parseFloat(max)) return false;
+            } else {
+                if (amount < parseFloat(min)) return false;
+            }
+        }
+
+        return true;
+    });
+
+    // Update the display
+    const listElement = document.getElementById(`${type}List`);
+    listElement.innerHTML = renderTransactions(filteredTransactions);
+}
+
+function resetFilter(type) {
+    // Reset all filter inputs
+    document.getElementById(`${type}FilterDate`).value = 'all';
+    document.getElementById(`${type}FilterCategory`).value = 'all';
+    document.getElementById(`${type}FilterAmount`).value = 'all';
+    document.getElementById(`${type}CustomDateRange`).style.display = 'none';
+    document.getElementById(`${type}CustomDateEnd`).style.display = 'none';
+    
+    // Show all transactions of the given type
+    const transactions = state.transactions.filter(t => t.type === type);
+    const listElement = document.getElementById(`${type}List`);
+    listElement.innerHTML = renderTransactions(transactions);
 }
 
 // Start the application
