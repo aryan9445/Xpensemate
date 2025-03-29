@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xpensemate - Expense Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Side Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>Xpensemate</h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-page="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li data-page="income">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Income</span>
+                </li>
+                <li data-page="expense">
+                    <i class="fas fa-receipt"></i>
+                    <span>Expense</span>
+                </li>
+                <li data-page="income-summary">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Income Summary</span>
+                </li>
+                <li data-page="expense-summary">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Expense Summary</span>
+                </li>
+                <li data-page="forecast">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Forecast Summary</span>
+                </li>
+                <li data-page="report">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Report</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="page active">
+                <h2>Dashboard</h2>
+                <div class="date-controls">
+                    <div class="form-group">
+                        <label for="dashboardMonth">Select Month:</label>
+                        <select id="dashboardMonth" class="month-select">
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>Total Balance</h3>
+                        <p class="amount" id="totalBalance">$0.00</p>
+                    </div>
+                    <div class="card">
+                        <h3>Total Income</h3>
+                        <p class="amount income" id="totalIncome">$0.00</p>
+                    </div>
+                    <div class="card">
+                        <h3>Total Expenses</h3>
+                        <p class="amount expense" id="totalExpense">$0.00</p>
+                    </div>
+                    <div class="card">
+                        <h3>Net Savings</h3>
+                        <p class="amount" id="netSavings">$0.00</p>
+                    </div>
+                </div>
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Income vs Expenses</h3>
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Recent Transactions</h3>
+                        <div class="transactions-list" id="recentTransactions"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Income Section -->
+            <section id="income" class="page">
+                <h2>Income</h2>
+                <div class="form-container">
+                    <form id="incomeForm">
+                        <div class="form-group">
+                            <label for="incomeAmount">Amount</label>
+                            <input type="number" id="incomeAmount" required min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="incomeCategory">Category</label>
+                            <select id="incomeCategory" required>
+                                <option value="salary">Salary</option>
+                                <option value="freelance">Freelance</option>
+                                <option value="investments">Investments</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="incomeDate">Date</label>
+                            <input type="date" id="incomeDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="incomeDescription">Description</label>
+                            <input type="text" id="incomeDescription" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Income</button>
+                    </form>
+                </div>
+                <div class="transactions-list" id="incomeList"></div>
+            </section>
+
+            <!-- Expense Section -->
+            <section id="expense" class="page">
+                <h2>Expense</h2>
+                <div class="form-container">
+                    <form id="expenseForm">
+                        <div class="form-group">
+                            <label for="expenseAmount">Amount</label>
+                            <input type="number" id="expenseAmount" required min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="expenseCategory">Category</label>
+                            <select id="expenseCategory" required>
+                                <option value="food">Food</option>
+                                <option value="transport">Transport</option>
+                                <option value="utilities">Utilities</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="expenseDate">Date</label>
+                            <input type="date" id="expenseDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expenseDescription">Description</label>
+                            <input type="text" id="expenseDescription" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Expense</button>
+                    </form>
+                </div>
+                <div class="transactions-list" id="expenseList"></div>
+            </section>
+
+            <!-- Income Summary Section -->
+            <section id="income-summary" class="page">
+                <h2>Income Summary</h2>
+                <div class="date-controls">
+                    <div class="form-group">
+                        <label for="incomeMonth">Select Month:</label>
+                        <select id="incomeMonth" class="month-select">
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="summary-container">
+                    <div class="chart-card">
+                        <h3>Income by Category</h3>
+                        <canvas id="incomeCategoryChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Monthly Income Trend</h3>
+                        <canvas id="incomeTrendChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Expense Summary Section -->
+            <section id="expense-summary" class="page">
+                <h2>Expense Summary</h2>
+                <div class="date-controls">
+                    <div class="form-group">
+                        <label for="expenseMonth">Select Month:</label>
+                        <select id="expenseMonth" class="month-select">
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="summary-container">
+                    <div class="chart-card">
+                        <h3>Expenses by Category</h3>
+                        <canvas id="expenseCategoryChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Monthly Expense Trend</h3>
+                        <canvas id="expenseTrendChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Forecast Summary Section -->
+            <section id="forecast" class="page">
+                <h2>Forecast Summary</h2>
+                <div class="summary-container">
+                    <div class="chart-card">
+                        <h3>Financial Forecast</h3>
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Report Section -->
+            <section id="report" class="page">
+                <h2>Financial Report</h2>
+                <div class="report-controls">
+                    <button id="generateReport" class="btn btn-primary">Generate Report</button>
+                    <button id="downloadCSV" class="btn btn-secondary">Download CSV</button>
+                </div>
+                <div class="report-container" id="reportContent"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html> 
