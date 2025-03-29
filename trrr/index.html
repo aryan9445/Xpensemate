@@ -119,6 +119,51 @@
                         <button type="submit" class="btn btn-primary">Add Income</button>
                     </form>
                 </div>
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label for="incomeFilterDate">Date Range</label>
+                        <select id="incomeFilterDate">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="year">This Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" id="incomeCustomDateRange" style="display: none;">
+                        <label for="incomeFilterStartDate">Start Date</label>
+                        <input type="date" id="incomeFilterStartDate">
+                    </div>
+                    <div class="filter-group" id="incomeCustomDateEnd" style="display: none;">
+                        <label for="incomeFilterEndDate">End Date</label>
+                        <input type="date" id="incomeFilterEndDate">
+                    </div>
+                    <div class="filter-group">
+                        <label for="incomeFilterCategory">Category</label>
+                        <select id="incomeFilterCategory">
+                            <option value="all">All Categories</option>
+                            <option value="salary">Salary</option>
+                            <option value="freelance">Freelance</option>
+                            <option value="investments">Investments</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="incomeFilterAmount">Amount Range</label>
+                        <select id="incomeFilterAmount">
+                            <option value="all">All Amounts</option>
+                            <option value="0-1000">$0 - $1,000</option>
+                            <option value="1000-5000">$1,000 - $5,000</option>
+                            <option value="5000-10000">$5,000 - $10,000</option>
+                            <option value="10000+">$10,000+</option>
+                        </select>
+                    </div>
+                    <div class="filter-buttons">
+                        <button type="button" class="btn-filter apply" id="applyIncomeFilter">Apply Filter</button>
+                        <button type="button" class="btn-filter reset" id="resetIncomeFilter">Reset</button>
+                    </div>
+                </div>
                 <div class="transactions-list" id="incomeList"></div>
             </section>
 
@@ -152,6 +197,53 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Add Expense</button>
                     </form>
+                </div>
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label for="expenseFilterDate">Date Range</label>
+                        <select id="expenseFilterDate">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="year">This Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" id="expenseCustomDateRange" style="display: none;">
+                        <label for="expenseFilterStartDate">Start Date</label>
+                        <input type="date" id="expenseFilterStartDate">
+                    </div>
+                    <div class="filter-group" id="expenseCustomDateEnd" style="display: none;">
+                        <label for="expenseFilterEndDate">End Date</label>
+                        <input type="date" id="expenseFilterEndDate">
+                    </div>
+                    <div class="filter-group">
+                        <label for="expenseFilterCategory">Category</label>
+                        <select id="expenseFilterCategory">
+                            <option value="all">All Categories</option>
+                            <option value="food">Food</option>
+                            <option value="transport">Transport</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="expenseFilterAmount">Amount Range</label>
+                        <select id="expenseFilterAmount">
+                            <option value="all">All Amounts</option>
+                            <option value="0-100">$0 - $100</option>
+                            <option value="100-500">$100 - $500</option>
+                            <option value="500-1000">$500 - $1,000</option>
+                            <option value="1000+">$1,000+</option>
+                        </select>
+                    </div>
+                    <div class="filter-buttons">
+                        <button type="button" class="btn-filter apply" id="applyExpenseFilter">Apply Filter</button>
+                        <button type="button" class="btn-filter reset" id="resetExpenseFilter">Reset</button>
+                    </div>
                 </div>
                 <div class="transactions-list" id="expenseList"></div>
             </section>
