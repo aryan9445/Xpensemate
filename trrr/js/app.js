@@ -5,7 +5,14 @@ let state = {
     selectedMonths: {
         dashboard: new Date(),
         income: new Date(),
-        expense: new Date()
+        expense: new Date(),
+        report: new Date()
+    },
+    settings: {
+        monthlyExpenseLimit: 0,
+        alertThreshold: 80,
+        alerts: [],
+        currency: 'USD'
     }
 };
 
@@ -19,11 +26,22 @@ const expenseList = document.getElementById('expenseList');
 const recentTransactions = document.getElementById('recentTransactions');
 const generateReportBtn = document.getElementById('generateReport');
 const downloadCSVBtn = document.getElementById('downloadCSV');
+const monthlyExpenseLimit = document.getElementById('monthlyExpenseLimit');
+const alertThreshold = document.getElementById('alertThreshold');
+const saveExpenseLimit = document.getElementById('saveExpenseLimit');
+const currencySelect = document.getElementById('currencySelect');
+const saveCurrency = document.getElementById('saveCurrency');
+const alertHistory = document.getElementById('alertHistory');
+const alertModal = document.getElementById('alertModal');
+const alertMessage = document.getElementById('alertMessage');
+const alertDismiss = document.getElementById('alertDismiss');
+const alertModalClose = document.querySelector('.alert-modal-close');
 
 // Month Selection Elements
 const dashboardMonth = document.getElementById('dashboardMonth');
 const incomeMonth = document.getElementById('incomeMonth');
 const expenseMonth = document.getElementById('expenseMonth');
+const reportMonth = document.getElementById('reportMonth');
 
 // Chart Options
 const chartOptions = {
@@ -72,6 +90,98 @@ const chartOptions = {
         }
     }
 };
+
+// Currency Formatting
+const currencyFormats = {
+    USD: { symbol: '$', position: 'before', decimal: '.', thousands: ',' },
+    EUR: { symbol: '€', position: 'after', decimal: ',', thousands: '.' },
+    GBP: { symbol: '£', position: 'before', decimal: '.', thousands: ',' },
+    JPY: { symbol: '¥', position: 'before', decimal: '.', thousands: ',' },
+    INR: { symbol: '₹', position: 'before', decimal: '.', thousands: ',' },
+    AUD: { symbol: 'A$', position: 'before', decimal: '.', thousands: ',' },
+    CAD: { symbol: 'C$', position: 'before', decimal: '.', thousands: ',' },
+    SGD: { symbol: 'S$', position: 'before', decimal: '.', thousands: ',' },
+    MYR: { symbol: 'RM', position: 'before', decimal: '.', thousands: ',' }
+};
+
+function formatCurrency(amount) {
+    const format = currencyFormats[state.settings.currency];
+    const formattedNumber = amount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).replace('.', format.decimal).replace(/,/g, format.thousands);
+
+    return format.position === 'before' 
+        ? `${format.symbol}${formattedNumber}`
+        : `${formattedNumber}${format.symbol}`;
+}
+
+// Currency Conversion Rates (example rates, you might want to fetch these from an API)
+const currencyRates = {
+    USD: 1,
+    EUR: 0.92,
+    GBP: 0.79,
+    JPY: 148.50,
+    INR: 83.12,
+    AUD: 1.52,
+    CAD: 1.35,
+    SGD: 1.34,
+    MYR: 4.77
+};
+
+function convertAmount(amount, fromCurrency, toCurrency) {
+    if (fromCurrency === toCurrency) return amount;
+    return amount * (currencyRates[toCurrency] / currencyRates[fromCurrency]);
+}
+
+function convertAllTransactions(fromCurrency, toCurrency) {
+    state.transactions = state.transactions.map(transaction => ({
+        ...transaction,
+        amount: convertAmount(transaction.amount, fromCurrency, toCurrency)
+    }));
+    saveToLocalStorage();
+    updateAllData();
+}
+
+function updateAmountRanges() {
+    const format = currencyFormats[state.settings.currency];
+    
+    // Update Income Amount Ranges
+    const incomeAmountSelect = document.getElementById('incomeFilterAmount');
+    if (incomeAmountSelect) {
+        const ranges = [
+            { value: '0-1000', min: 0, max: 1000 },
+            { value: '1000-5000', min: 1000, max: 5000 },
+            { value: '5000-10000', min: 5000, max: 10000 },
+            { value: '10000+', min: 10000, max: null }
+        ];
+        
+        incomeAmountSelect.innerHTML = '<option value="all">All Amounts</option>' +
+            ranges.map(range => {
+                const min = formatCurrency(range.min);
+                const max = range.max ? formatCurrency(range.max) : '+';
+                return `<option value="${range.value}">${min} - ${max}</option>`;
+            }).join('');
+    }
+
+    // Update Expense Amount Ranges
+    const expenseAmountSelect = document.getElementById('expenseFilterAmount');
+    if (expenseAmountSelect) {
+        const ranges = [
+            { value: '0-100', min: 0, max: 100 },
+            { value: '100-500', min: 100, max: 500 },
+            { value: '500-1000', min: 500, max: 1000 },
+            { value: '1000+', min: 1000, max: null }
+        ];
+        
+        expenseAmountSelect.innerHTML = '<option value="all">All Amounts</option>' +
+            ranges.map(range => {
+                const min = formatCurrency(range.min);
+                const max = range.max ? formatCurrency(range.max) : '+';
+                return `<option value="${range.value}">${min} - ${max}</option>`;
+            }).join('');
+    }
+}
 
 // Navigation
 navLinks.forEach(link => {
@@ -144,6 +254,12 @@ function addTransaction(transaction) {
         throw new Error('Invalid amount');
     }
     state.transactions.push(transaction);
+    
+    // Check expense limit when adding an expense
+    if (transaction.type === 'expense') {
+        checkExpenseLimit(transaction.amount);
+    }
+    
     saveToLocalStorage();
     updateAllData();
 }
@@ -596,13 +712,6 @@ function calculateSlope(data) {
 }
 
 // Utility Functions
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(amount);
-}
-
 function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -614,7 +723,7 @@ function formatDate(dateString) {
 // Report Generation
 function generateReport() {
     const reportContent = document.getElementById('reportContent');
-    const selectedDate = state.selectedMonths.dashboard;
+    const selectedDate = state.selectedMonths.report;
     const monthlyData = getMonthlyData(selectedDate);
     const totalIncome = monthlyData.income[monthlyData.income.length - 1];
     const totalExpense = monthlyData.expenses[monthlyData.expenses.length - 1];
@@ -622,7 +731,7 @@ function generateReport() {
 
     reportContent.innerHTML = `
         <div class="report-section">
-            <h3>Financial Summary for ${selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
+            <h3>Financial Summary for ${selectedDate === 'all' ? 'All Time' : selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
             <p>Total Income: ${formatCurrency(totalIncome)}</p>
             <p>Total Expenses: ${formatCurrency(totalExpense)}</p>
             <p>Net Savings: ${formatCurrency(netSavings)}</p>
@@ -751,6 +860,7 @@ function updatePageData(pageId) {
 // Initialize Application
 function init() {
     loadFromLocalStorage();
+    loadSettings();
     initializeMonthSelectors();
     initializeFilters();
     updateAllData();
@@ -758,7 +868,7 @@ function init() {
 
 // Initialize Month Selectors
 function initializeMonthSelectors() {
-    const monthSelectors = [dashboardMonth, incomeMonth, expenseMonth];
+    const monthSelectors = [dashboardMonth, incomeMonth, expenseMonth, reportMonth];
     const currentDate = new Date();
     
     // Get unique months from transactions
@@ -822,6 +932,16 @@ function initializeMonthSelectors() {
         updateCategoryCharts();
         updateTrendCharts();
     });
+
+    reportMonth.addEventListener('change', () => {
+        if (reportMonth.value === 'all') {
+            state.selectedMonths.report = 'all';
+        } else {
+            const [year, month] = reportMonth.value.split('-');
+            state.selectedMonths.report = new Date(year, month - 1);
+        }
+        generateReport();
+    });
 }
 
 // Filter functionality
@@ -877,7 +997,7 @@ function applyFilter(type) {
                 startDate = new Date(now.setFullYear(now.getFullYear() - 1));
                 break;
             default:
-                startDate = new Date(0); // Beginning of time
+                startDate = new Date(0);
         }
     }
 
@@ -929,6 +1049,111 @@ function resetFilter(type) {
     const listElement = document.getElementById(`${type}List`);
     listElement.innerHTML = renderTransactions(transactions);
 }
+
+// Settings Management
+function loadSettings() {
+    try {
+        const savedSettings = localStorage.getItem('xpensemate_settings');
+        if (savedSettings) {
+            state.settings = JSON.parse(savedSettings);
+            monthlyExpenseLimit.value = state.settings.monthlyExpenseLimit;
+            alertThreshold.value = state.settings.alertThreshold;
+            currencySelect.value = state.settings.currency;
+            updateAlertHistory();
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+    }
+}
+
+function saveSettings() {
+    try {
+        const oldCurrency = state.settings.currency;
+        state.settings.monthlyExpenseLimit = parseFloat(monthlyExpenseLimit.value) || 0;
+        state.settings.alertThreshold = parseInt(alertThreshold.value) || 80;
+        state.settings.currency = currencySelect.value;
+        
+        // Convert all transactions if currency changed
+        if (oldCurrency !== state.settings.currency) {
+            convertAllTransactions(oldCurrency, state.settings.currency);
+        }
+        
+        localStorage.setItem('xpensemate_settings', JSON.stringify(state.settings));
+        updateAlertHistory();
+        updateAmountRanges();
+    } catch (error) {
+        console.error('Error saving settings:', error);
+    }
+}
+
+function updateAlertHistory() {
+    alertHistory.innerHTML = state.settings.alerts
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map(alert => `
+            <div class="alert-item ${alert.type}">
+                <div>${alert.message}</div>
+                <small>${formatDate(alert.date)}</small>
+            </div>
+        `).join('');
+}
+
+function addAlert(message, type = 'warning') {
+    const alert = {
+        message,
+        type,
+        date: new Date().toISOString()
+    };
+    state.settings.alerts.push(alert);
+    saveSettings();
+    updateAlertHistory();
+    showAlertModal(message, type);
+}
+
+function showAlertModal(message, type = 'warning') {
+    alertMessage.textContent = message;
+    alertModal.classList.add('active');
+}
+
+function hideAlertModal() {
+    alertModal.classList.remove('active');
+}
+
+function checkExpenseLimit(amount) {
+    if (state.settings.monthlyExpenseLimit <= 0) return;
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const monthlyExpenses = state.transactions
+        .filter(t => {
+            const date = new Date(t.date);
+            return t.type === 'expense' &&
+                   date.getMonth() === currentMonth &&
+                   date.getFullYear() === currentYear;
+        })
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const newTotal = monthlyExpenses + amount;
+    const percentage = (newTotal / state.settings.monthlyExpenseLimit) * 100;
+
+    if (newTotal > state.settings.monthlyExpenseLimit) {
+        addAlert(`Monthly expense limit exceeded! Current: ${formatCurrency(newTotal)} / Limit: ${formatCurrency(state.settings.monthlyExpenseLimit)}`, 'warning');
+    } else if (percentage >= state.settings.alertThreshold) {
+        addAlert(`You are approaching your monthly expense limit! Current: ${formatCurrency(newTotal)} / Limit: ${formatCurrency(state.settings.monthlyExpenseLimit)} (${Math.round(percentage)}%)`, 'info');
+    }
+}
+
+// Event Listeners
+saveExpenseLimit.addEventListener('click', saveSettings);
+saveCurrency.addEventListener('click', saveSettings);
+
+alertDismiss.addEventListener('click', hideAlertModal);
+alertModalClose.addEventListener('click', hideAlertModal);
+alertModal.addEventListener('click', (e) => {
+    if (e.target === alertModal) {
+        hideAlertModal();
+    }
+});
 
 // Start the application
 init(); 
