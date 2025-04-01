@@ -612,4 +612,217 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Settings Styles */
+.settings-container {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    margin-top: 20px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    backdrop-filter: blur(5px);
+}
+
+.settings-section {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section h3 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 1.2em;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 10px;
+}
+
+.settings-section .form-group {
+    margin-bottom: 20px;
+}
+
+.settings-section .form-group:last-child {
+    margin-bottom: 25px;
+}
+
+.settings-section label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.settings-section input,
+.settings-section select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    color: #2c3e50;
+    font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+.settings-section input:focus,
+.settings-section select:focus {
+    outline: none;
+    border-color: #3498db;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.settings-section input::placeholder {
+    color: #95a5a6;
+}
+
+.settings-section .btn-primary {
+    width: 100%;
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 500;
+    background: #3498db;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.settings-section .btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.alert-history {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.alert-item {
+    background: rgba(231, 76, 60, 0.1);
+    border-left: 4px solid #e74c3c;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: #2c3e50;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+}
+
+.alert-item:hover {
+    background: rgba(231, 76, 60, 0.15);
+}
+
+.alert-item.warning {
+    background: rgba(241, 196, 15, 0.1);
+    border-left-color: #f1c40f;
+}
+
+.alert-item.warning:hover {
+    background: rgba(241, 196, 15, 0.15);
+}
+
+.alert-item.info {
+    background: rgba(52, 152, 219, 0.1);
+    border-left-color: #3498db;
+}
+
+.alert-item.info:hover {
+    background: rgba(52, 152, 219, 0.15);
+}
+
+.alert-item small {
+    display: block;
+    margin-top: 5px;
+    color: #7f8c8d;
+    font-size: 0.85em;
+}
+
+/* Alert Modal */
+.alert-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.alert-modal.active {
+    display: flex;
+}
+
+.alert-modal-content {
+    background: #2c3e50;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    position: relative;
+}
+
+.alert-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.alert-modal-title {
+    font-size: 1.2em;
+    color: #fff;
+    margin: 0;
+}
+
+.alert-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0;
+}
+
+.alert-modal-body {
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.alert-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Responsive adjustments for settings */
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 15px;
+        margin: 10px;
+    }
+
+    .settings-section {
+        padding: 20px;
+    }
+
+    .settings-section h3 {
+        font-size: 1.1em;
+    }
 } 
